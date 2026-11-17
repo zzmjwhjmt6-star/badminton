@@ -120,13 +120,42 @@
     try { localStorage.setItem(KEY, '#a=' + app.a + '&k=' + app.k); } catch (e) { /* โหมดส่วนตัว: ใช้จากลิงก์อย่างเดียว */ }
   }
 
+  var opening = 0;
   function open(app) {
+    var my = ++opening;
+    var base = 'https://script.google.com/macros/s/' + app.a + '/exec?k=' + encodeURIComponent(app.k);
+    var loaded = false, checked = false;
     $('setup').hidden = true;
+    $('err').textContent = '';
     $('loading').hidden = false;
     var f = $('app');
+    f.classList.remove('ready');
     f.hidden = false;
-    f.onload = function () { f.classList.add('ready'); $('loading').hidden = true; };
-    f.src = 'https://script.google.com/macros/s/' + app.a + '/exec?k=' + encodeURIComponent(app.k);
+    function reveal() {
+      if (my !== opening || !loaded || !checked) return;
+      f.classList.add('ready');
+      $('loading').hidden = true;
+    }
+    f.onload = function () { loaded = true; reveal(); };
+    f.src = base;
+    // ถามก่อนว่าลิงก์ยังใช้ได้ไหม (ลิงก์ที่ถูกลบ Google จะแสดงหน้า "ต้องมีสิทธิ์เข้าถึง" ที่ชวนงงใน iframe)
+    fetch(base + '&check=1', { credentials: 'omit', cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (my !== opening) return;
+        if (j && j.ok === false) { invalid(); return; }
+        checked = true; reveal();
+      })
+      .catch(function () { checked = true; reveal(); });   // ถามไม่ได้ (เน็ต ฯลฯ) → เปิดตามปกติ
+  }
+
+  function invalid() {
+    try { localStorage.removeItem(KEY); } catch (e) { /* ไม่เป็นไร */ }
+    $('app').hidden = true;
+    $('app').src = 'about:blank';
+    $('loading').hidden = true;
+    $('setup').hidden = false;
+    $('err').textContent = 'This link does not work anymore. Ask the owner for a new one.';
   }
 
   $('form').addEventListener('submit', function (e) {
