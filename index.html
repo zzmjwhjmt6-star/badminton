@@ -97,6 +97,26 @@
   var TOK_RE = /^[\w-]{20,200}$/;
   function $(id) { return document.getElementById(id); }
 
+  // หน้านี้ต้องเปิดเองเท่านั้น — ถ้ามีเว็บอื่นเอามาครอบ (หลอกให้กดปุ่มในแอพ) จะไม่อ่านลิงก์ที่เครื่องจำไว้และไม่เปิดแอพ
+  if (window.top !== window.self) {
+    var box = $('setup');
+    box.textContent = '';
+    var h = document.createElement('h1');
+    h.textContent = 'Nagoya Badminton';
+    var msg = document.createElement('p');
+    msg.textContent = 'This app only works on its own page.';
+    var go = document.createElement('a');
+    go.href = location.href.split('#')[0];
+    go.target = '_blank';
+    go.rel = 'noopener noreferrer';
+    go.textContent = 'Open the app';
+    box.appendChild(h);
+    box.appendChild(msg);
+    box.appendChild(go);
+    box.hidden = false;
+    return;
+  }
+
   /** อ่าน a (deployment id) + k (token) จาก "#a=…&k=…" หรือจาก URL ของ Apps Script (/macros/s/<id>/exec?k=…) */
   function parse(text) {
     text = String(text || '').trim();
